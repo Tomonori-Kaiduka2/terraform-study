@@ -22,7 +22,7 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
-        # 設定を整理しました
-        run: terraform plan -input=false
-        env:
-          TF_LOG: INFO
+        shell: powershell
+        run: |
+          terraform plan -input=false -out=tfplan
+          terraform show tfplan
