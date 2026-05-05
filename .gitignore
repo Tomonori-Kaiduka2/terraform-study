@@ -6,6 +6,8 @@ report.txt
 src/
 docs/
 tests/
+!/app/tests/
+!/app/tests/**
 scripts/
 # terraform.tfvarsが生成するエージェントディレクトリ
 Agent-*/
