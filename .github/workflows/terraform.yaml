@@ -22,4 +22,8 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
-        run: terraform plan
+              # -input=false を追加して、入力を待たずに強制実行させる
+              # さらに、詳細なデバッグログ（TF_LOG）を出す設定を一時的に追加
+              run: terraform plan -input=false
+              env:
+                TF_LOG: INFO
