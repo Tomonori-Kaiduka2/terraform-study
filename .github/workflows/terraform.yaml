@@ -1,13 +1,14 @@
-name: "Terraform Apply and Save"
+name: "AI Agent Mass Production"
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   terraform:
-    name: "Build and Save Files"
+    name: "Mass Provisioning"
     runs-on: windows-latest
 
     steps:
@@ -23,12 +24,15 @@ jobs:
         run: terraform init
 
       - name: Terraform Apply
-        # -auto-approve を付けることで「本当に作っていいですか？」という確認をスキップします
+        # ここで terraform.tfvars のリストを読み込み、一気に量産します
         run: terraform apply -auto-approve -input=false
 
-      - name: Upload Report File
-        # 作成されたファイルをGitHubの画面からダウンロードできるようにします
+      - name: Upload All Agent Environments
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-outputs    # ダウンロード時の名前
-          path: ./*.txt              # すべてのテキストファイルを保存対象にする
+          name: all-agent-packages
+          # フォルダ名が何であっても、すべてのエージェントの成果物を回収する指定です
+          # 「*/doc/」と「*/scripts/」の中身を再帰的に取得します
+          path: |
+            ./**/doc/*.txt
+            ./**/scripts/*.ps1
