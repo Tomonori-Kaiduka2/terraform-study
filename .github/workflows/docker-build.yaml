@@ -1,5 +1,9 @@
 name: Docker Build and Test
 
+permissions:
+  contents: read
+  issues: write
+
 on:
   push:
   pull_request:
@@ -94,6 +98,7 @@ jobs:
 
       - name: Analyze Failure with Copilot and Create Issue
         if: failure()
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
