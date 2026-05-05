@@ -1,0 +1,9 @@
+.terraform/
+*.tfstate
+*.tfstate.backup
+hello_terraform.txt
+report.txt
+src/
+docs/
+tests/
+scripts/
