@@ -57,6 +57,11 @@ jobs:
           echo "Streamlit did not start in time" >&2
           exit 1
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Restore pip cache
         uses: actions/cache@v4
         with:
@@ -76,9 +81,9 @@ jobs:
       - name: Install Playwright Dependencies
         run: |
           python -m pip install --upgrade pip
-          sudo python -m pip install -r requirements-test.txt
+          python -m pip install -r requirements-test.txt
           # 依存ライブラリのみを先にインストール（失敗しても次へ行くように || true）
-          sudo python -m playwright install-deps chromium || true
+          python -m playwright install-deps chromium || true
 
       - name: Run Playwright Tests
         run: |
