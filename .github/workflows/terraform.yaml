@@ -17,12 +17,13 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          # ここが重要！出力を加工するラッパーをオフにします
+          terraform_wrapper: false
 
       - name: Terraform Init
         run: terraform init
 
       - name: Terraform Plan
-        shell: powershell
-        run: |
-          terraform plan -input=false -out=tfplan
-          terraform show tfplan
+        # 直接PowerShellで実行し、出力を強制表示させます
+        run: terraform plan -input=false
