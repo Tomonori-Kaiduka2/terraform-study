@@ -73,11 +73,17 @@ jobs:
           restore-keys: |
             playwright-${{ runner.os }}-
 
-      - name: Install Playwright and run tests
+      - name: Install Playwright Dependencies
         run: |
           python -m pip install -r requirements-test.txt
-          playwright install --with-deps chromium
-          # ログをファイルに書き出すように変更
+          # 依存ライブラリのみを先にインストール（失敗しても次へ行くように || true）
+          sudo npx playwright install-deps chromium || true
+
+      - name: Run Playwright Tests
+        run: |
+          # ブラウザ本体のインストール
+          npx playwright install chromium
+          # テスト実行
           pytest app/tests/test_app.py > pytest_log.txt 2>&1
 
       - name: Analyze Failure with Copilot and Create Issue
