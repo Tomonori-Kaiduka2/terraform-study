@@ -5,7 +5,8 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # 3. 必要なライブラリをインストール
-RUN pip install streamlit
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # 4. 自分のコードをコンテナの中にコピー
 COPY app.py .
