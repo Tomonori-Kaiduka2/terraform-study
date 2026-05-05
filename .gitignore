@@ -7,3 +7,5 @@ src/
 docs/
 tests/
 scripts/
+# terraform.tfvarsが生成するエージェントディレクトリ
+Agent-*/
