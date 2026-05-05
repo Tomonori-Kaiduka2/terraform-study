@@ -1,14 +1,13 @@
-name: "Terraform Windows Check"
+name: "Terraform Apply and Save"
 
 on:
   push:
     branches:
       - main
-  pull_request:
 
 jobs:
   terraform:
-    name: "Terraform Plan on Windows"
+    name: "Build and Save Files"
     runs-on: windows-latest
 
     steps:
@@ -18,12 +17,18 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          # ここが重要！出力を加工するラッパーをオフにします
           terraform_wrapper: false
 
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Plan
-        # 直接PowerShellで実行し、出力を強制表示させます
-        run: terraform plan -input=false
+      - name: Terraform Apply
+        # -auto-approve を付けることで「本当に作っていいですか？」という確認をスキップします
+        run: terraform apply -auto-approve -input=false
+
+      - name: Upload Report File
+        # 作成されたファイルをGitHubの画面からダウンロードできるようにします
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-outputs    # ダウンロード時の名前
+          path: ./*.txt              # すべてのテキストファイルを保存対象にする
