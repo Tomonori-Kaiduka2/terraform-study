@@ -77,12 +77,12 @@ jobs:
         run: |
           python -m pip install -r requirements-test.txt
           # 依存ライブラリのみを先にインストール（失敗しても次へ行くように || true）
-          sudo npx playwright install-deps chromium || true
+          sudo python -m playwright install-deps chromium || true
 
       - name: Run Playwright Tests
         run: |
           # ブラウザ本体のインストール
-          npx playwright install chromium
+          python -m playwright install chromium
           # テスト実行
           pytest app/tests/test_app.py > pytest_log.txt 2>&1
 
