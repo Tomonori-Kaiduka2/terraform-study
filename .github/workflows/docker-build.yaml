@@ -103,7 +103,8 @@ jobs:
           gh issue create \
             --title "❌ Test Failure: Playwright UI Test" \
             --body "$ANALYSIS" \
-            --label "bug, automated-report"
+            --label "bug" \
+            --label "automated-report"
 
       - name: Upload Playwright screenshot artifact
         if: always()
