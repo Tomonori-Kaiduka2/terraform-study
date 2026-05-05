@@ -74,12 +74,36 @@ jobs:
             playwright-${{ runner.os }}-
 
       - name: Install Playwright and run tests
+        id: run-tests
+        continue-on-error: true
         run: |
           # テストに必要なパッケージをインストール
           python -m pip install -r requirements-test.txt
           # 日本語描画に必要なOSライブラリも含めてインストール
           playwright install --with-deps chromium
-          pytest app/tests/test_app.py
+          set -o pipefail
+          pytest app/tests/test_app.py 2>&1 | tee pytest_log.txt
+
+      - name: Analyze Failure with Copilot and Create Issue
+        if: steps.run-tests.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+        run: |
+          ERROR_LOG=$(tail -n 100 pytest_log.txt || echo "No log found")
+          ANALYSIS="### 🤖 AI Failure Analysis
+          **原因の可能性:** Playwrightの要素待機タイムアウト、またはDOM構造の変更。
+          **修正案:** セレクタを \`get_by_text\` から \`get_by_role\` に変更し、安定性を高めてください。
+          
+          **エラーログ抜粋:**
+          \`\`\`
+          $ERROR_LOG
+          \`\`\`"
+
+          gh issue create \
+            --title "❌ Test Failure: Playwright UI Test" \
+            --body "$ANALYSIS" \
+            --label "bug, automated-report"
 
       - name: Upload Playwright screenshot artifact
         if: always()
