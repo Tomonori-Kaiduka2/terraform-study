@@ -3,6 +3,7 @@ name: Docker Build and Test
 on:
   push:
   pull_request:
+  workflow_dispatch: # 手動実行も可能にしています
 
 jobs:
   build:
@@ -10,6 +11,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      # 1. 日本語フォントのインストール（文字化け対策）
+      - name: Install Japanese Fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -68,8 +75,10 @@ jobs:
 
       - name: Install Playwright and run tests
         run: |
+          # テストに必要なパッケージをインストール
           python -m pip install -r requirements-test.txt
-          playwright install chromium
+          # 日本語描画に必要なOSライブラリも含めてインストール
+          playwright install --with-deps chromium
           pytest app/tests/test_app.py
 
       - name: Upload Playwright screenshot artifact
