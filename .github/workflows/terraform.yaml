@@ -9,7 +9,7 @@ on:
 jobs:
   terraform:
     name: "Terraform Plan on Windows"
-    runs-on: windows-latest  # Windows環境を指定
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -22,8 +22,7 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
-              # -input=false を追加して、入力を待たずに強制実行させる
-              # さらに、詳細なデバッグログ（TF_LOG）を出す設定を一時的に追加
-              run: terraform plan -input=false
-              env:
-                TF_LOG: INFO
+        # 設定を整理しました
+        run: terraform plan -input=false
+        env:
+          TF_LOG: INFO
