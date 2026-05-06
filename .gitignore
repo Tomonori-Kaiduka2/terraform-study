@@ -9,5 +9,7 @@ tests/
 !/app/tests/
 !/app/tests/**
 scripts/
+!.github/scripts/
+!.github/scripts/**
 # terraform.tfvarsが生成するエージェントディレクトリ
 Agent-*/
