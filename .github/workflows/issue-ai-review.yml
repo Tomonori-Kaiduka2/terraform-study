@@ -36,7 +36,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           EVENT_NAME: ${{ github.event_name }}
           COMMENT_BODY: ${{ github.event.comment.body || '' }}
-          GEMINI_MODEL: "gemini-1.5-flash" # 必要ならここでモデルを指定
+          GEMINI_MODEL: "gemini-2.0-flash" # 必要ならここでモデルを指定
         run: |
           # 以前のGCPサービスキー関連の処理は不要になったので削除
           python .github/scripts/issue_analysis.py
