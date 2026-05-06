@@ -9,7 +9,10 @@ def get_env(name: str, default: str = "") -> str:
     value = os.getenv(name, default)
     if value is None:
         return default
-    return value.strip()
+    value = value.strip()
+    if value == "":
+        return default
+    return value
 
 
 def create_issue_comment(issue, body: str) -> None:
