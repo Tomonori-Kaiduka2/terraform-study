@@ -1,8 +1,7 @@
 import os
 import sys
-import json
-from github import Github
-import openai
+from github import Github, Auth
+from openai import OpenAI
 
 
 def get_env(name: str, default: str = "") -> str:
@@ -32,16 +31,24 @@ def generate_analysis(title: str, body: str, comment: str, model: str) -> str:
     if comment:
         prompt += f"Trigger Comment:\n{comment}\n\n"
 
-    response = openai.ChatCompletion.create(
+    response = client.responses.create(
         model=model,
-        messages=[
+        input=[
             {"role": "system", "content": "You are a professional AI assistant for GitHub issue triage and analysis."},
             {"role": "user", "content": prompt},
         ],
         max_tokens=600,
         temperature=0.2,
     )
-    return response.choices[0].message.content.strip()
+    if hasattr(response, 'output_text') and response.output_text:
+        return response.output_text.strip()
+    if response.output and len(response.output) > 0:
+        first_item = response.output[0]
+        if isinstance(first_item, dict) and 'content' in first_item:
+            for chunk in first_item['content']:
+                if 'text' in chunk:
+                    return chunk['text'].strip()
+    return str(response)
 
 
 def main() -> int:
@@ -70,8 +77,8 @@ def main() -> int:
         print("ISSUE_NUMBER must be an integer.", file=sys.stderr)
         return 1
 
-    openai.api_key = ai_api_key
-    github = Github(github_token)
+    client = OpenAI(api_key=ai_api_key)
+    github = Github(auth=Auth.Token(github_token))
     repo = github.get_repo(os.getenv("GITHUB_REPOSITORY"))
     issue = repo.get_issue(number=issue_number_int)
 
