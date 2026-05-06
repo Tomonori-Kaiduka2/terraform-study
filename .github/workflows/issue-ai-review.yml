@@ -29,15 +29,14 @@ jobs:
 
       - name: Run AI issue analysis
         env:
+          # Pythonコードが要求している名前に合わせる
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
-          GCP_LOCATION: ${{ secrets.GCP_LOCATION }}
-          VERTEX_MODEL: gemini-1.5-mini
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} # これが必要！
+          GITHUB_REPOSITORY: ${{ github.repository }}   # これも必要！
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           EVENT_NAME: ${{ github.event_name }}
           COMMENT_BODY: ${{ github.event.comment.body || '' }}
+          GEMINI_MODEL: "gemini-2.0-flash" # 必要ならここでモデルを指定
         run: |
-          echo "$GCP_SA_KEY" > /tmp/gcp-key.json
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
+          # 以前のGCPサービスキー関連の処理は不要になったので削除
           python .github/scripts/issue_analysis.py
