@@ -1,7 +1,8 @@
 import os
 import sys
 from github import Github, Auth
-from openai import OpenAI
+from google.cloud import aiplatform
+from google.api_core.client_options import ClientOptions
 
 
 def get_env(name: str, default: str = "") -> str:
@@ -21,7 +22,30 @@ def add_label(issue, label_name: str) -> None:
         issue.add_to_labels(label_name)
 
 
-def generate_analysis(title: str, body: str, comment: str, model: str) -> str:
+def resolve_model_name(model: str, project: str, location: str) -> str:
+    if model.startswith("projects/"):
+        return model
+    if not project:
+        raise ValueError("GCP_PROJECT is required when VERTEX_MODEL is not a full resource path.")
+    return f"projects/{project}/locations/{location}/publishers/google/models/{model}"
+
+
+def parse_vertex_response(response) -> str:
+    if hasattr(response, "predictions") and response.predictions:
+        first = response.predictions[0]
+        if isinstance(first, dict):
+            if "content" in first:
+                return first["content"]
+            if "candidates" in first and first["candidates"]:
+                candidate = first["candidates"][0]
+                if isinstance(candidate, dict) and "content" in candidate:
+                    return candidate["content"]
+                return str(candidate)
+        return str(first)
+    return str(response)
+
+
+def generate_analysis(client, model_name: str, title: str, body: str, comment: str) -> str:
     prompt = (
         "You are an expert software engineer. Analyze the following GitHub issue and provide a concise technical analysis. "
         "Return the response in markdown with sections: Summary, Likely Cause, Suggested Fixes, and Next Steps.\n\n"
@@ -31,30 +55,20 @@ def generate_analysis(title: str, body: str, comment: str, model: str) -> str:
     if comment:
         prompt += f"Trigger Comment:\n{comment}\n\n"
 
-    response = client.responses.create(
-        model=model,
-        input=[
-            {"role": "system", "content": "You are a professional AI assistant for GitHub issue triage and analysis."},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=600,
-        temperature=0.2,
+    request = aiplatform.gapic.types.PredictRequest(
+        endpoint=model_name,
+        instances=[{"content": prompt}],
+        parameters={"temperature": 0.2, "maxOutputTokens": 600},
     )
-    if hasattr(response, 'output_text') and response.output_text:
-        return response.output_text.strip()
-    if response.output and len(response.output) > 0:
-        first_item = response.output[0]
-        if isinstance(first_item, dict) and 'content' in first_item:
-            for chunk in first_item['content']:
-                if 'text' in chunk:
-                    return chunk['text'].strip()
-    return str(response)
+    response = client.predict(request=request)
+    return parse_vertex_response(response)
 
 
 def main() -> int:
     github_token = get_env("GITHUB_TOKEN")
-    ai_api_key = get_env("AI_API_KEY")
-    ai_model = get_env("AI_MODEL", "gemini-1.5-mini")
+    gcp_project = get_env("GCP_PROJECT")
+    gcp_location = get_env("GCP_LOCATION", "us-central1")
+    vertex_model = get_env("VERTEX_MODEL", "gemini-1.5-mini")
     issue_number = get_env("ISSUE_NUMBER")
     event_name = get_env("EVENT_NAME")
     comment_body = get_env("COMMENT_BODY")
@@ -63,12 +77,12 @@ def main() -> int:
         print("GITHUB_TOKEN is required.", file=sys.stderr)
         return 1
 
-    if not ai_api_key:
-        print("AI_API_KEY is required. Set GEMINI_API_KEY in GitHub Secrets.", file=sys.stderr)
-        return 1
-
     if not issue_number:
         print("ISSUE_NUMBER is required.", file=sys.stderr)
+        return 1
+
+    if not gcp_project:
+        print("GCP_PROJECT is required.", file=sys.stderr)
         return 1
 
     try:
@@ -77,7 +91,11 @@ def main() -> int:
         print("ISSUE_NUMBER must be an integer.", file=sys.stderr)
         return 1
 
-    client = OpenAI(api_key=ai_api_key)
+    client = aiplatform.gapic.PredictionServiceClient(
+        client_options=ClientOptions(api_endpoint=f"{gcp_location}-aiplatform.googleapis.com")
+    )
+    model_name = resolve_model_name(vertex_model, gcp_project, gcp_location)
+
     github = Github(auth=Auth.Token(github_token))
     repo = github.get_repo(os.getenv("GITHUB_REPOSITORY"))
     issue = repo.get_issue(number=issue_number_int)
@@ -98,7 +116,7 @@ def main() -> int:
         print(f"Unsupported event: {event_name}")
         return 0
 
-    analysis = generate_analysis(issue.title, issue.body or "", comment_body, ai_model)
+    analysis = generate_analysis(issue.title, issue.body or "", comment_body, model_name)
 
     comment = (
         "### 🤖 AI Issue Analysis\n"
